@@ -1,0 +1,22 @@
+# ───────────────────────────────────────────────────────────────
+# 권한 범위 정의 — 반드시 본인이 테스트 권한을 가진 자산만 입력
+# (참여 중인 프로그램의 in-scope, 또는 본인 소유 자산)
+# ───────────────────────────────────────────────────────────────
+program: "Example Program (HackerOne)"
+
+in_scope:
+  # 와일드카드 "*.example.com" 은 서브도메인만 매칭합니다.
+  # apex 도메인도 포함하려면 "example.com" 을 따로 추가하세요.
+  domains:
+    - "example.com"
+    - "*.example.com"
+  # 특정 URL만 범위인 경우
+  urls: []
+
+out_of_scope:
+  # out-of-scope 는 항상 in-scope 보다 우선합니다.
+  domains:
+    - "blog.example.com"
+    - "*.internal.example.com"
+  urls:
+    - "https://example.com/legacy/"

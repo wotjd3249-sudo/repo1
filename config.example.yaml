@@ -1,0 +1,68 @@
+# ───────────────────────────────────────────────────────────────
+# 실행 설정
+# ───────────────────────────────────────────────────────────────
+
+# 권한 확인 게이트: 본인이 대상 자산에 대해 테스트 권한이 있음을 확인.
+# 이 값을 true 로 바꿔야만 실행됩니다.
+authorized: false
+
+# ── 스코프 공급원 ──
+#   file      : scope.yaml 을 직접 작성
+#   hackerone : HackerOne API 로 참여 중인 프로그램의 in-scope 자산을 자동 수집
+scope_source: "hackerone"
+
+# ── HackerOne 연동 (scope_source: hackerone 일 때) ──
+hackerone:
+  username: ""                 # HackerOne 사용자명 (또는 환경변수 H1_USERNAME)
+  # 토큰은 여기 직접 넣지 말고 환경변수로 주입 권장:  export H1_API_TOKEN=...
+  api_token: ""                # https://hackerone.com/settings/api_token/edit 에서 발급
+  api_token_env: "H1_API_TOKEN"
+  handles: []                  # 특정 프로그램 handle 만. 비우면 참여 중인 전체
+  only_bounty_eligible: false  # true 면 bounty 대상 자산만 수집
+  web_asset_types: ["URL", "DOMAIN", "WILDCARD"]  # 수집할 자산 유형
+
+# ── 요청 제어 (대상 서버 부하 방지) ──
+rate_limit_rps: 2       # 초당 요청 수 상한
+concurrency: 5          # 동시 연결 수
+timeout: 10             # 요청 타임아웃(초)
+user_agent: "bbauto/1.0 (authorized security testing; contact in program profile)"
+
+# ── 출력 ──
+output_dir: "./reports"
+state_file: "./state/findings.json"
+
+# ── 활성화할 탐지 모듈 ──
+modules:
+  subdomains: true      # 서브도메인 수집
+  http_probe: true      # HTTP 프로빙 + 핑거프린팅
+  secrets: true         # 노출된 설정/시크릿 경로 탐지 (GET, 비파괴적)
+  cve_match: true       # 기술 버전 → 알려진 CVE 매칭 (로컬 DB)
+  nuclei: false         # 경량 능동 탐지 (nuclei 설치 필요)
+
+# ── nuclei (modules.nuclei: true 일 때) ──
+nuclei:
+  severity: "low,medium,high,critical"
+  rate_limit: 10        # nuclei 자체 초당 요청 상한
+  # 공격성이 낮은 태그 위주로 제한 (DoS/fuzz 계열 제외 권장)
+  exclude_tags: "dos,fuzz,intrusive,brute-force"
+  extra_args: []
+
+# ── 알림 (비워두면 해당 채널 비활성) ──
+notify:
+  slack_webhook: ""     # https://hooks.slack.com/services/...
+  discord_webhook: ""   # https://discord.com/api/webhooks/...
+  min_severity: "low"   # 이 심각도 이상의 신규 finding만 개별 알림
+
+# ── GitHub 푸시 ──
+github:
+  enabled: true
+  # repo_dir: 리포트를 커밋할 로컬 git 리포 경로.
+  #   "." 로 두면 지금 이 코드 리포(bb-auto)에 리포트를 함께 커밋/푸시합니다.
+  #   전용 리포트 리포를 쓰려면 "./bb-reports" + remote 를 지정하세요.
+  repo_dir: "."
+  remote: ""                               # 비우면 현재 리포의 origin 사용
+  branch: "main"
+  commit_name: "bb-auto"
+  commit_email: "bb-auto@users.noreply.github.com"
+  create_issues: false                     # 신규 finding마다 gh로 Issue 생성 (gh CLI 필요)
+  issues_repo: "wotjd3249-sudo/bb-auto"    # 비우면 origin/remote 에서 추론

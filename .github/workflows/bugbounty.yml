@@ -1,0 +1,69 @@
+name: bb-auto scan
+
+# 권한 범위(scope.yaml)에 대한 자동 스캔을 스케줄로 구동합니다.
+# 사용 전 반드시 확인:
+#   - scope.yaml 이 본인 권한 자산만 담고 있어야 합니다.
+#   - config.yaml 의 authorized: true
+#   - 리포지토리 Secrets: SLACK_WEBHOOK / DISCORD_WEBHOOK (선택)
+#   - 리포트를 같은 리포에 커밋하려면 github.enabled=true, remote 는 비우고
+#     아래 워크플로가 현재 리포에 직접 커밋하도록 두세요(권한: contents: write).
+
+on:
+  schedule:
+    - cron: "17 3 * * *"   # 매일 03:17 UTC (정각 회피)
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: (선택) nuclei 설치
+        if: ${{ vars.ENABLE_NUCLEI == 'true' }}
+        run: |
+          go install -v github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest || true
+          echo "$HOME/go/bin" >> "$GITHUB_PATH"
+
+      - name: Run scan
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: |
+          # Secrets 를 config 에 주입 (webhook 은 코드에 하드코딩하지 않음)
+          python - <<'PY'
+          import os, yaml
+          with open("config.yaml") as f: c = yaml.safe_load(f)
+          c.setdefault("notify", {})
+          if os.environ.get("SLACK_WEBHOOK"):   c["notify"]["slack_webhook"]   = os.environ["SLACK_WEBHOOK"]
+          if os.environ.get("DISCORD_WEBHOOK"): c["notify"]["discord_webhook"] = os.environ["DISCORD_WEBHOOK"]
+          # Actions 에서는 현재 체크아웃된 리포에 직접 커밋 (remote 비움)
+          c.setdefault("github", {})
+          c["github"]["enabled"] = True
+          c["github"]["repo_dir"] = "."
+          c["github"]["remote"] = ""
+          with open("config.yaml", "w") as f: yaml.safe_dump(c, f, allow_unicode=True)
+          PY
+          python -m bbauto run
+
+      - name: Commit reports
+        run: |
+          git config user.name "bb-auto"
+          git config user.email "bb-auto@users.noreply.github.com"
+          git add reports latest.md state 2>/dev/null || true
+          git commit -m "scan: $(date -u +%FT%TZ) 리포트" || echo "변경 없음"
+          git push || echo "푸시 생략"
