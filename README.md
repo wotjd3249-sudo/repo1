@@ -18,10 +18,14 @@
 ## 설치
 
 ```bash
-cd /home/user/bb-auto
+git clone https://github.com/wotjd3249-sudo/repo1 && cd repo1
 python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
+pip install -e .          # 의존성 설치 + 'bbauto' 명령 등록
 ```
+
+설치하면 `bbauto` 명령이 **어느 디렉터리에서나** 실행됩니다.
+설치 없이 쓰려면 저장소 루트(= `bbauto/` 폴더가 있는 곳)에서 `python -m bbauto ...` 로 실행하세요.
+`ModuleNotFoundError: No module named bbauto` 는 저장소 루트가 아닌 곳에서 `python -m bbauto` 를 실행했을 때 납니다 — `cd` 로 루트로 이동하거나 `pip install -e .` 하세요.
 
 선택적 외부 도구(있으면 자동 사용, 없으면 건너뜀):
 - `subfinder` — 서브도메인 수집 강화
@@ -71,21 +75,23 @@ cp scope.example.yaml scope.yaml
 ## 실행
 
 ```bash
+# 설정/스코프 유효성만 점검
+bbauto check
+
 # 한 사이클 실행
-python -m bbauto run
+bbauto run
 
 # 주기적 자동 실행 (내장 루프, 예: 6시간마다)
-python -m bbauto run --loop --interval 21600
-
-# 설정/스코프 유효성만 점검
-python -m bbauto check
+bbauto run --loop --interval 21600
 ```
+
+> `pip install -e .` 를 안 했다면 저장소 루트에서 `python -m bbauto check` 처럼 실행하세요(동일 동작).
 
 ### cron으로 자동화 (권장)
 
 ```bash
 # 매일 03:17에 실행 (서버 부하 분산 위해 정각 회피)
-17 3 * * * cd /home/user/bb-auto && .venv/bin/python -m bbauto run >> run.log 2>&1
+17 3 * * * cd /path/to/repo1 && .venv/bin/bbauto run >> run.log 2>&1
 ```
 
 ### GitHub Actions로 자동화
