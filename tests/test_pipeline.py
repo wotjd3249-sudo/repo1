@@ -33,7 +33,7 @@ def test_full_cycle_offline(monkeypatch):
     def fake_probe(hosts, guard, http, concurrency):
         return [recon.Host(host="api.example.com", url="https://api.example.com",
                            status=200, server="Apache/2.4.49", title="Test",
-                           tech={"apache": "2.4.49", "jenkins": ""})]
+                           tech={"apache": "2.4.49", "jenkins": "2.426.1"})]
     monkeypatch.setattr(recon, "probe_all", fake_probe)
 
     with tempfile.TemporaryDirectory() as tmp:

@@ -97,10 +97,24 @@ python -m bbauto check
 1. 스코프 로드(HackerOne API 또는 `scope.yaml`) → Scope Guard 초기화
 2. 서브도메인 수집(passive: crt.sh, + subfinder)
 3. HTTP 프로빙 + 기술 핑거프린팅
-4. 경량 탐지: 노출 시크릿/설정 경로, 기술→CVE 매칭, (옵션) nuclei
+4. 경량 탐지: 노출 시크릿/설정 경로(시그니처 기반), 기술 버전→CVE 매칭, (옵션) nuclei
 5. 중복 제거(state/findings.json) → 신규 finding만 추출
 6. 마크다운 리포트 생성 → GitHub 리포에 커밋/푸시 (옵션: Issue 생성)
 7. Slack/Discord로 시작·신규 finding·완료 알림
+
+## 탐지 상세
+
+**노출 경로/시크릿** (`secrets` 모듈) — 각 경로는 **시그니처가 응답 바디에 매칭될 때만** finding 으로 올려 오탐을 줄입니다.
+- `secrets.level: standard` (기본): `.env`, `.git/`, `actuator/env` 등 고가치 경로 위주 (요청량 적음)
+- `secrets.level: deep`: 백업/덤프, 클라우드 자격(`.aws/credentials`, `terraform.tfstate`, `.kube/config`, `.npmrc`, SSH 키), 프레임워크 설정(Spring/Django/Laravel), `actuator/heapdump`, API 스펙 등 전체(요청량 많음)
+- `secrets.extra_paths` 로 사용자 정의 경로 추가 가능
+
+**기술 버전 → CVE 매칭** (`cve_match` 모듈) — 핑거프린팅으로 추출한 버전을 로컬 CVE DB와 **버전 비교**로 매칭
+(Apache 2.4.49/50, nginx <1.21, Drupalgeddon, Joomla RCE, Jenkins CVE-2024-23897, Tomcat Ghostcat 등).
+> ⚠️ 배너 버전 기반 **추정**이라 백포트 패치된 경우 오탐 가능 — 반드시 수동 검증 후 신고하세요.
+
+**nuclei** (`nuclei` 모듈, 설치 필요) — 안전 프리셋(`dos,fuzz,intrusive,brute-force` 태그 기본 제외),
+레이트리밋·동시성·타임아웃·실행시간 상한을 config로 제어, 결과에서 CVE/참고링크·추출값 파싱, 스코프 이중 재확인.
 
 ## 디렉터리
 

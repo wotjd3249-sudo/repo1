@@ -110,6 +110,29 @@ def _fingerprint(resp) -> dict[str, str]:
     vm = VERSION_RE.search(server)
     if vm and vm.group(1).lower() not in tech:
         tech[vm.group(1).lower()] = vm.group(2)
+
+    # ── 세부 버전 추출(CVE 매칭 입력 품질 향상) ──
+    # WordPress / Drupal generator 메타태그
+    m = re.search(r'name=["\']generator["\'][^>]*content=["\']WordPress\s+([\d.]+)',
+                  body, re.I)
+    if m:
+        tech["wordpress"] = m.group(1)
+    m = re.search(r'name=["\']generator["\'][^>]*content=["\']Drupal\s+([\d.]+)',
+                  body, re.I)
+    if m:
+        tech["drupal"] = m.group(1)
+    # Drupal 은 X-Generator 헤더로도 버전 노출
+    m = re.search(r"Drupal\s+([\d.]+)", headers.get("x-generator", ""), re.I)
+    if m:
+        tech["drupal"] = m.group(1)
+    # Jenkins: X-Jenkins 헤더 존재 자체가 지표(값은 버전)
+    if "x-jenkins" in headers:
+        jm = re.search(r"([\d]+(?:\.[\d]+)+)", headers.get("x-jenkins", ""))
+        tech["jenkins"] = jm.group(1) if jm else tech.get("jenkins", "")
+    # Tomcat 버전(바디/헤더)
+    m = re.search(r"Apache Tomcat/?\s*([\d.]+)", body, re.I)
+    if m:
+        tech["tomcat"] = m.group(1)
     return tech
 
 

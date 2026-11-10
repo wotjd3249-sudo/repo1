@@ -51,8 +51,11 @@ def run_cycle(cfg: Config, scope: Scope, verbose: bool = True) -> dict:
         # 3) 탐지
         findings = []
         if mods.get("secrets", True):
-            log("노출 경로/시크릿 탐지...")
-            findings += scan.scan_exposed(live, guard, http, cfg.concurrency)
+            level = (cfg.secrets or {}).get("level", "standard")
+            extra = (cfg.secrets or {}).get("extra_paths")
+            log(f"노출 경로/시크릿 탐지(level={level})...")
+            findings += scan.scan_exposed(live, guard, http, cfg.concurrency,
+                                          level=level, extra_paths=extra)
         if mods.get("cve_match", True):
             log("기술→CVE 매칭...")
             findings += scan.scan_cves(live)

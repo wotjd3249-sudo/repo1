@@ -39,12 +39,28 @@ modules:
   cve_match: true       # 기술 버전 → 알려진 CVE 매칭 (로컬 DB)
   nuclei: false         # 경량 능동 탐지 (nuclei 설치 필요)
 
-# ── nuclei (modules.nuclei: true 일 때) ──
+# ── 노출 경로/시크릿 탐지 (modules.secrets: true 일 때) ──
+secrets:
+  # standard: 고가치 경로 위주(요청량 적음)  /  deep: 전체 경로(요청량 많음)
+  level: "standard"
+  # 사용자 정의 추가 경로(선택). signature 가 바디에 매칭될 때만 finding.
+  extra_paths: []
+  #  - { path: "/custom/secret.json", desc: "커스텀 시크릿", severity: "high", signature: "api_key" }
+
+# ── nuclei (modules.nuclei: true 일 때) — 안전 프리셋 ──
 nuclei:
   severity: "low,medium,high,critical"
-  rate_limit: 10        # nuclei 자체 초당 요청 상한
-  # 공격성이 낮은 태그 위주로 제한 (DoS/fuzz 계열 제외 권장)
+  exclude_severity: ""          # 예: "info" (정보성 결과 제외)
+  tags: ""                      # 특정 태그만 실행(비우면 제한 없음). 예: "cve,exposure,misconfig"
+  # 공격성 태그는 기본 제외 (DoS/fuzz/침투성/브루트포스)
   exclude_tags: "dos,fuzz,intrusive,brute-force"
+  templates: []                 # 사용자 템플릿 경로 목록(-t)
+  rate_limit: 10                # 초당 요청 상한
+  concurrency: 25               # 병렬 템플릿 수(-c)
+  bulk_size: 25                 # 호스트 병렬 수(-bulk-size)
+  timeout: 10                   # 요청 타임아웃(초)
+  retries: 1
+  max_runtime: 1800             # nuclei 전체 실행 상한(초)
   extra_args: []
 
 # ── 알림 (비워두면 해당 채널 비활성) ──

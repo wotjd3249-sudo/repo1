@@ -45,6 +45,7 @@ class Config:
     github: dict[str, Any]
     scope_source: str = "file"            # "file" | "hackerone"
     hackerone: dict[str, Any] = field(default_factory=dict)
+    secrets: dict[str, Any] = field(default_factory=dict)
     raw: dict[str, Any] = field(default_factory=dict)
 
 
@@ -90,6 +91,7 @@ def load_config(path: str = "config.yaml") -> Config:
         github=dict(d.get("github") or {}),
         scope_source=str(d.get("scope_source", "file")).lower(),
         hackerone=dict(d.get("hackerone") or {}),
+        secrets=dict(d.get("secrets") or {}),
         raw=d,
     )
     return cfg
