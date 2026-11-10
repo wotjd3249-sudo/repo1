@@ -6,3 +6,8 @@ config.yaml
 state/
 reports/
 run.log
+
+# packaging build artifacts
+*.egg-info/
+build/
+dist/
