@@ -94,9 +94,17 @@ bbauto run --loop --interval 21600
 17 3 * * * cd /path/to/repo1 && .venv/bin/bbauto run >> run.log 2>&1
 ```
 
-### GitHub Actions로 자동화
+### GitHub Actions로 자동화 (로컬 설치 불필요)
 
-`.github/workflows/bugbounty.yml` 참고. 리포지토리 Secrets에 `SLACK_WEBHOOK`/`DISCORD_WEBHOOK` 등록 후 schedule로 구동됩니다.
+`.github/workflows/bugbounty.yml` 이 스케줄(매일 03:17 UTC)과 수동 실행을 지원합니다.
+리포 **Settings → Secrets and variables → Actions** 에서:
+
+- **Secrets**: `H1_API_TOKEN`(필수), `H1_USERNAME`(필수), `SLACK_WEBHOOK`/`DISCORD_WEBHOOK`(선택)
+- **Variables**: `AUTHORIZED=true`(이 값이 true 여야만 스캔 실행 — 권한 확인), `ENABLE_NUCLEI=true`(선택)
+
+설정 후 Actions 탭에서 **Run workflow**(workflow_dispatch)로 즉시 실행·검증할 수 있고,
+HackerOne 스코프는 토큰으로 매 실행 자동 수집됩니다. 리포트는 이 리포의 `reports/` 에 커밋됩니다.
+> 참여 중인 HackerOne 프로그램이 없으면 수집할 스코프가 없어 실행이 중단됩니다 — 먼저 프로그램에 가입하세요.
 
 ## 동작 흐름
 
